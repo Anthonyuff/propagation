@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-dt=0.002
+dt=0.001
 dz=5
 nz=500
 nt=500
@@ -34,17 +34,24 @@ def eq1d(P,dt,dz,nt,nz):
 
 P=eq1d(P,dt,dz,nt,nz)
 
+plt.imshow(P.T, aspect='auto', cmap='gray',
+           extent=[0, nt*dt, nz*dz, 0])
+
+plt.xlabel('time (s)')
+plt.ylabel('death (m)')
+plt.show()
 from matplotlib.animation import FuncAnimation
 
 fig,ax = plt.subplots()
 linha, = ax.plot(prof, P[:,0])
 ax.set_xlim(prof.min(), prof.max())
-ax.set_ylim(-1, 1)
+ax.set_ylim(-1.5, 1.5)
 
 def atualizar(frame):
     linha.set_ydata(P[:,frame])
-    ax.set_title(f"Tempo = {frame*dt:.3f} s")
+    ax.set_title(f"time = {frame*dt:.3f} s")
     return linha,
 
 ani = FuncAnimation(fig, atualizar, frames=nt, interval=50)
+ani.save('onda.gif',writer='pilow',fps=30)
 plt.show()
