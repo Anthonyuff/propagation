@@ -56,10 +56,10 @@ def eq2d(P, dt, dh, nt, nx, nz, c, sx, sz, fonte):
    d2u_dz2 = np.zeros((nz, nx))
 
    #criar matriz de snapshots
-   #snap=np.arange((nz,nx))
+   snap=np.zeros((nz,nx,500))
    dh2 = dh * dh
    cte = (c * dt)**2
-
+   s=0
    for t in range(1, nt-1):
 
       # fonte
@@ -73,8 +73,14 @@ def eq2d(P, dt, dh, nt, nx, nz, c, sx, sz, fonte):
       P[:, :, t+1] = cte * laplacian + 2*P[:, :, t] - P[:, :, t-1]
 
       # salvar snapshots a um certo passo de tempo
-    
-   return P
+      
+      if t%4==0 and s<500:
+        
+        snap[:,:,s] = P[:,:,t]
+        s += 1
+   return P,snap
+
+
 def  disp(c,alpha,f,b):
   h=c/(alpha*f)
   dt=h/(b*c)
@@ -99,13 +105,18 @@ u = np.zeros((nz, nx, nt))
 
 source =  ricker(tempo, 30)
 
-U = eq2d(u, dt, dh, nt, nx, nz, c, sx, sz, source)
+U ,snap = eq2d(u, dt, dh, nt, nx, nz, c, sx, sz, source)
 
 from matplotlib.animation import FuncAnimation
 
 fig,ax = plt.subplots()
 
-wave = ax.imshow(U[:, :, 0], cmap="gray", aspect="auto",extent=[0, nx*dh, nt*dt, 0])
+perc = 99
+
+
+
+
+wave = ax.imshow(snap[:, :, 0], cmap="gray", aspect="auto",extent=[0, nx*dh, nt*dt, 0])
 
 
 ax.set_xlabel("x (m)")
@@ -115,12 +126,14 @@ ax.set_title("Snapshot")
 
 def atualizar(frame):
     
-    wave.set_ydata(U[:,:,frame])
-
+    vmax= 2 * np.std(snap[:, :, frame])
+    vmin=-vmax
+    wave.set_data(snap[:,:,frame])
+    wave.set_clim(vmin, vmax)
     ax.set_title(f"time = {frame*dt:.3f} s")
     
     return wave,
 
 
-ani = FuncAnimation(fig, atualizar, frames=nt, interval=10)
+ani = FuncAnimation(fig, atualizar, frames=500, interval=10)
 plt.show()
