@@ -18,6 +18,7 @@ prof= np.arange(0,nz*dz,dz)
 P= np.zeros((nz,nt))
 
 def ricker(t,freq):
+  
   f_corte = freq
 
   fc = f_corte / (3 * np.sqrt(np.pi))
@@ -78,7 +79,7 @@ def eq1d(P,dt,dz,nt,nz,rec_pos,rec,cerjan):
         
         laplacian = (-P[n+2, i] + 16*P[n+1, i] - 30*P[n, i] + 16*P[n-1, i] - P[n-2, i])  / (12 * dz**2)
 
-        P[n,i+1] = (c*dt)**2 * laplacian + 2*P[n,i] - P[n,i-1]  #0.015*(P[n,i] - P[n,i-1])
+        P[n,i+1] = (c*dt)**2 * laplacian + 2*P[n,i] - P[n,i-1]  
     
     P[:, i] *= cerjan
 
