@@ -139,6 +139,14 @@ plt.imshow(cerjan, cmap="gray")
 plt.colorbar()
 plt.show()
 
+abs_snap = np.abs(snap)
+vmax = np.percentile(abs_snap, 99)
+vmin = -vmax
+
+plt.imshow(U[:, :, 150], cmap="gray", aspect="auto",extent=[0, nx*dh, nz*dh, 0], vmax=vmax, vmin=vmin)
+plt.colorbar()
+plt.show()
+
 from matplotlib.animation import FuncAnimation
 
 fig,ax = plt.subplots()
