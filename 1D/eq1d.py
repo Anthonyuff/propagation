@@ -7,7 +7,7 @@ dz=5
 
 nz=500
 
-nt=3200
+nt=1000
 
 c=1500
 
@@ -128,5 +128,5 @@ def atualizar(frame):
     return linha,
 
 ani = FuncAnimation(fig, atualizar, frames=nt, interval=10)
-#ani.save('onda.gif',writer='pilow',fps=30)
+ani.save('ondac.gif',writer='pilow',fps=30)
 plt.show()

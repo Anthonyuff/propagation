@@ -60,11 +60,24 @@ def eq2d(P, dt, dh, nt, nx, nz, c, sx, sz, fonte,cerjan):
    dh2 = dh * dh
    cte = (c * dt)**2
    s=0
+   offset = int(10 / dh) 
+   rx = list(range(20, nx-20, offset))
 
+   
+   rz=[20]*len(rx)
+   simo=np.zeros((nt,len(rx)))
+   
    for t in range(1, nt-1):
-
+      dlay= 150 #delay
       # fonte
-      P[sz, sx, t] += fonte[t] / dh2
+      P[20, sx, t] += fonte[t] / dh2
+      if t>=dlay:
+        P[20, sx+40, t] += fonte[t] / dh2
+      
+      # P[sz, sx+20, t] += fonte[t] / dh2
+      # P[sz, sx+30, t] += fonte[t] / dh2
+      # P[sz, sx-20, t] += fonte[t] / dh2
+
 
       laplacian = laplacian2d(
         P[:, :, t], d2u_dx2, d2u_dz2, nz, nx, dh2
@@ -81,7 +94,12 @@ def eq2d(P, dt, dh, nt, nx, nz, c, sx, sz, fonte,cerjan):
         
         snap[:,:,s] = P[:,:,t]
         s += 1
-   return P,snap
+
+      for j in range(len(rx)):
+            
+        simo[t,j] = P[rz[j],rx[j], t]
+
+   return P,snap,simo
 
 def cerjang (cerjan,nabc,nx,nz): #função gausiana
   sb=1.5* nabc
@@ -106,19 +124,59 @@ def cerjang (cerjan,nabc,nx,nz): #função gausiana
 
 
 def  disp(c,alpha,f,b):
-  h=c/(alpha*f)
-  dt=h/(b*c)
+  cmax = max(c)
+  fmax = max(f)
+  h=cmax/(alpha*fmax)
+  dt=h/(b*cmax)
   return h,dt
 
-nz = 100
+def model(inter,c,modelo):
+  if len(inter) == 0:
+        modelo[:, :] = c[0]
+  else:
+        modelo[:inter[0], :] = c[0]
+
+        for i in range(1, len(inter)):
+            z_ini = inter[i - 1]
+            z_fim = inter[i]
+            modelo[z_ini:z_fim, :] = c[i]
+
+        modelo[inter[-1]:, :] = c[-1]
+  return modelo
+  
+  
+nz = 200
 nt = 2000
 nx = 200
-c = 1500
-dh,dt= disp(c,3,30,4)
-nabc=40
+f=[80]
+nabc= 20
+
+modelo=np.zeros((nz,nx))
+interfaces = [50, 150]
+c = [1000, 1500, 2000]
+dh,dt= disp(c,3,f,4)
+modelo=model(interfaces,c,modelo)
+
+
+
+print(dh,dt)
 
 sx = nx // 2
 sz = nz // 2
+offset = int(10 / dh) 
+rx = list(range(3, nx, offset))
+rz=[3]*len(rx)
+plt.imshow(modelo,aspect="auto",extent=[0, nx * dh, nz * dh, 0])
+plt.scatter(np.array(rx)*dh,np.array(rz)*dh,c= "green", zorder=10,s=12,label="Receptors")
+plt.scatter( sx*dh , 3*dh ,c= "red", marker="*", zorder=10,s=120,label="Source")
+plt.scatter( sx*dh + 40 , 3*dh ,c= "red", marker="*", zorder=10,s=120)
+
+plt.xlabel("x (m)")
+plt.ylabel("z (m)")
+plt.legend()
+plt.title("Velocity Model")
+plt.show()
+plt.show()
 
 tempo=np.arange(0 ,nt * dt, dt)
 
@@ -133,9 +191,12 @@ source =  ricker(tempo, 30)
 cerjan=np.ones((nz,nx))
 
 cerjan= cerjang(cerjan,nabc,nx,nz)
-U ,snap = eq2d(u, dt, dh, nt, nx, nz, c, sx, sz, source,cerjan)
+U ,snap,simo = eq2d(u, dt, dh, nt, nx, nz, modelo, sx, sz, source,cerjan)
 
-plt.imshow(cerjan, cmap="gray")
+vmax = np.percentile(np.abs(simo), 99)
+vmin = -vmax
+
+plt.imshow(simo, cmap="gray",aspect='auto', extent=[0, 9, nt*dt, 0], vmax=vmax, vmin=vmin)
 plt.colorbar()
 plt.show()
 
@@ -143,16 +204,17 @@ abs_snap = np.abs(snap)
 vmax = np.percentile(abs_snap, 99)
 vmin = -vmax
 
-plt.imshow(U[:, :, 150], cmap="gray", aspect="auto",extent=[0, nx*dh, nz*dh, 0], vmax=vmax, vmin=vmin)
-plt.colorbar()
-plt.show()
+
+# plt.imshow(U[ 50, 50, :], cmap="gray", aspect="auto",extent=[0, nx*dh, nz*dh, 0], vmax=vmax, vmin=vmin)
+# plt.colorbar()
+# plt.show()
 
 from matplotlib.animation import FuncAnimation
 
 fig,ax = plt.subplots()
 
-
-wave = ax.imshow(snap[:, :, 0], cmap="gray", aspect="auto",extent=[0, nx*dh, nz*dh, 0])
+ax.imshow(modelo,cmap='gray',aspect='auto', extent=[0, nx*dh, nz*dh, 0],alpha=0.5)
+wave = ax.imshow(snap[:, :, 0], cmap="gray", aspect="auto",extent=[0, nx*dh, nz*dh, 0],alpha=0.7)
 
 
 ax.set_xlabel("x (m)")
@@ -173,5 +235,5 @@ def atualizar(frame):
 
 
 ani = FuncAnimation(fig, atualizar, frames=500, interval=10)
-#ani.save('onda2d.gif',writer='pilow',fps=30)
+ani.save('monda2d.gif',writer='pilow',fps=30)
 plt.show()
