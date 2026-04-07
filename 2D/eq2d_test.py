@@ -50,7 +50,7 @@ def laplacian2d(
   return d2u_dx2 + d2u_dz2
 
 @measure_runtime
-def eq2d(P, dt, dh, nt, nx, nz, c, sx, sz, fonte,cerjan):
+def eq2d(P, dt, dh, nt, nx, nz, c, sx, sz, fonte,fonte2,cerjan):
 
    d2u_dx2 = np.zeros((nz, nx))
    d2u_dz2 = np.zeros((nz, nx))
@@ -71,8 +71,8 @@ def eq2d(P, dt, dh, nt, nx, nz, c, sx, sz, fonte,cerjan):
       dlay= 150 #delay
       # fonte
       P[20, sx, t] += fonte[t] / dh2
-      if t>=dlay:
-        P[20, sx+40, t] += fonte[t] / dh2
+      
+      P[20, sx+40, t] += fonte2[t] / dh2
       
       # P[sz, sx+20, t] += fonte[t] / dh2
       # P[sz, sx+30, t] += fonte[t] / dh2
@@ -155,6 +155,7 @@ modelo=np.zeros((nz,nx))
 interfaces = [50, 150]
 c = [1000, 1500, 2000]
 dh,dt= disp(c,3,f,4)
+dh= 4
 modelo=model(interfaces,c,modelo)
 
 
@@ -178,7 +179,11 @@ plt.title("Velocity Model")
 plt.show()
 plt.show()
 
-tempo=np.arange(0 ,nt * dt, dt)
+source2 = np.zeros(nt)
+wavelet2 = ricker(np.arange(0, (nt-150)*dt, dt), 30)
+source2[150:] = wavelet2
+
+tempo=np.arange(0  ,nt * dt, dt)
 
 prof= np.arange(0, nz * dh, dh)
 
@@ -187,11 +192,12 @@ offset=np.arange(0, nx * dh, dh)
 u = np.zeros((nz, nx, nt)) 
 
 source =  ricker(tempo, 30)
+#source2 = ricker(tempo2, 30)
 
 cerjan=np.ones((nz,nx))
 
 cerjan= cerjang(cerjan,nabc,nx,nz)
-U ,snap,simo = eq2d(u, dt, dh, nt, nx, nz, modelo, sx, sz, source,cerjan)
+U ,snap,simo = eq2d(u, dt, dh, nt, nx, nz, modelo, sx, sz, source,source2,cerjan)
 
 vmax = np.percentile(np.abs(simo), 99)
 vmin = -vmax
@@ -235,5 +241,5 @@ def atualizar(frame):
 
 
 ani = FuncAnimation(fig, atualizar, frames=500, interval=10)
-ani.save('monda2d.gif',writer='pilow',fps=30)
+#ani.save('monda2d.gif',writer='pilow',fps=30)
 plt.show()
